@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Notes App{% endblock %}
+
+{% block content %}
+
+<h1>Notes App</h1>
+
+{% for msg in get_flashed_messages() %}
+  {{ msg }}
+{% endfor %}
+<div class="container">
+<!-- <ul class="">
+  {% for pet in pets %}
+  <li><a href="/{{ pet.id }}">{{ pet.name }}</a>
+    {% if pet.photo_url %}
+      <img src="{{ pet.photo_url }}" alt="photo of {{ pet.name }}">
+    {% endif %}
+    {% if pet.available %}
+      AVAILABLE
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul> -->
+<a href="/add"><button class="btn btn-primary">Add Pet</button></a>
+</div>
+{% endblock %}
