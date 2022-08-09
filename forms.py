@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField
+from wtforms import StringField, PasswordField, TextAreaField
 from wtforms.validators import InputRequired, Optional, Email, Length
 
 class RegisterForm(FlaskForm):
@@ -23,3 +23,10 @@ class LoginForm(FlaskForm):
 
 class CSRFProtectForm(FlaskForm):
     """Form just for CSRF Protection"""
+
+class AddNoteForm(FlaskForm):
+    """Form for adding a new note."""
+    title = StringField('Title',
+                        validators=[InputRequired(), Length(min=2, max=100)])
+    content = TextAreaField('Content',
+                        validators=[InputRequired()])

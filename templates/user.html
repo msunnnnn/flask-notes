@@ -15,5 +15,21 @@
   <button type="submit" class="btn btn-primary">Logout</button>
 </form>
 
+<h2>Notes</h2>
+<ul>
+  {% for note in user.notes %}
+  <li>
+    <a href="/notes/{{ note.id }}">{{ note.title }}</a>
+    <a href="/notes/{{ note.id }}/update"><button>Edit Note</button></a>
+    <form action="/notes/{{ note.id }}/delete" method="POST">
+      <button>Delete Note</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+<a href="/users/{{ user.username }}/notes/add"><button>Add Note</button></a>
+<form action="/users/{{ user.username }}/delete" method="POST">
+  <button>Delete User</button>
+</form>
 
 {% endblock %}

@@ -1,7 +1,7 @@
 from flask import Flask, flash, redirect, render_template, session
 
-from models import db, connect_db, User
-from forms import RegisterForm, LoginForm, CSRFProtectForm
+from models import db, connect_db, User, Note
+from forms import AddNoteForm, RegisterForm, LoginForm, CSRFProtectForm
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "oh-so-secret"
@@ -95,3 +95,47 @@ def logout():
         session.pop("username", None)
 
     return redirect("/")
+
+@app.post("/users/<username>/delete")
+def delete_user_profile(username):
+    """Deletes user profile of logged in user."""
+
+    if "username" not in session or session["username"] != username:
+        flash("You must be logged in to view!")
+        return redirect("/login")
+
+    else:
+        Note.query.filter_by(owner=username).delete()
+        user = User.query.get(username)
+        user.query.delete()
+
+        db.session.commit()
+
+        session.pop("username")
+        return redirect('/login')
+
+@app.route("/users/<username>/notes/add", methods=["GET","POST"])
+def show_add_note_form(username):
+    """Shows add note form for user."""
+
+    if "username" not in session or session["username"] != username:
+        flash("You must be logged in to view!")
+        return redirect("/login")
+
+    else:
+        form = AddNoteForm()
+        user = User.query.get(username)
+
+        if form.validate_on_submit():
+            title = form.title.data
+            content = form.content.data
+
+            new_note = Note(title=title, content=content, owner=username)
+
+            db.session.add(new_note)
+            db.session.commit()
+
+            return redirect('/users/<username>')
+
+        else:
+            return render_template("addnote.html", form=form, user=user)
