@@ -1,13 +1,11 @@
 {% extends 'base.html' %}
 
-{% block title %}Register{% endblock %}
+{% block title %}Edit Note{% endblock %}
 
 {% block content %}
 
-<h1>Register User</h1>
-{% for msg in get_flashed_messages() %}
-  {{ msg }}
-{% endfor %}
+<h1>Edit Note for {{ note.owner }}</h1>
+
 
 <form method="POST">
 
@@ -25,10 +23,8 @@
     </p>
   {% endfor %}
 
-  <button type="submit">Register</button>
-
+  <button type="submit">Submit</button>
 
 </form>
-<a href="/login"><button type="submit">Go to Login Page</button></a>
 
 {% endblock %}

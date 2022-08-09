@@ -15,6 +15,10 @@
   <button type="submit" class="btn btn-primary">Logout</button>
 </form>
 
+{% for msg in get_flashed_messages() %}
+  {{ msg }}
+{% endfor %}
+
 <h2>Notes</h2>
 <ul>
   {% for note in user.notes %}

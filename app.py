@@ -1,7 +1,7 @@
 from flask import Flask, flash, redirect, render_template, session
 
 from models import db, connect_db, User, Note
-from forms import AddNoteForm, RegisterForm, LoginForm, CSRFProtectForm
+from forms import NoteForm, RegisterForm, LoginForm, CSRFProtectForm
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "oh-so-secret"
@@ -13,13 +13,18 @@ db.create_all()
 
 @app.get('/')
 def redirect_home_page():
-    """Redirects to register page."""
-    return redirect('/register')
+    """Redirects to login page."""
+    return redirect('/login')
+
+######## User ##########
 
 @app.route('/register', methods = ["GET", "POST"])
 def show_register_form():
     """Shows registration form for user, accepts user data and adds
     to database."""
+
+    if "username" in session:
+        return redirect(f'/users/{session["username"]}')
 
     form = RegisterForm()
 
@@ -29,6 +34,10 @@ def show_register_form():
         email = form.email.data
         first_name = form.first_name.data
         last_name = form.last_name.data
+
+        if User.query.get(username):
+            flash("invalid username")
+            return render_template("register.html", form = form)
 
         user = User.register(username=username,
                   password=password,
@@ -74,7 +83,7 @@ def login():
 @app.get("/users/<username>")
 def display_user_profile(username):
     """Display user profile of logged in user."""
-
+    # TODO: break into 2 if statements if not correct user, redirect to user page
     if "username" not in session or session["username"] != username:
         flash("You must be logged in to view!")
         return redirect("/login")
@@ -118,17 +127,20 @@ def delete_user_profile(username):
             session.pop("username")
         return redirect('/login')
 
+######## NOTES ##########
+
 @app.route("/users/<username>/notes/add", methods=["GET","POST"])
 def show_add_note_form(username):
     """Shows add note form for user."""
-
+    # TODO: break into 2 ifs
     if "username" not in session or session["username"] != username:
         flash("You must be logged in to view!")
         return redirect("/login")
 
     else:
-        form = AddNoteForm()
+        form = NoteForm()
         user = User.query.get(username)
+
 
         if form.validate_on_submit():
             title = form.title.data
@@ -139,7 +151,61 @@ def show_add_note_form(username):
             db.session.add(new_note)
             db.session.commit()
 
-            return redirect('/users/<username>')
+            return redirect(f'/users/{username}')
 
         else:
             return render_template("addnote.html", form=form, user=user)
+
+@app.get('/notes/<int:note_id>')
+def show_note(note_id):
+    """Show note page"""
+
+    note = Note.query.get_or_404(note_id)
+    if "username" not in session or session["username"] != note.owner:
+        flash("You must be logged in to view!")
+        return redirect("/login")
+
+    return render_template("note.html", note = note)
+
+@app.route('/notes/<note_id>/update', methods = ["GET", "POST"])
+def edit_note(note_id):
+    """Shows edit note form for user"""
+
+    note = Note.query.get_or_404(note_id)
+    form = NoteForm(obj = note)
+
+    if "username" not in session or session["username"] != note.owner:
+        flash("You must be logged in to view!")
+        return redirect("/login")
+
+    if form.validate_on_submit():
+        note.title = form.title.data
+        note.content = form.content.data
+
+        db.session.commit()
+        flash(f'{note.title} updated')
+        return redirect (f'/users/{note.owner}')
+
+    else:
+        return render_template("editnote.html", form = form, note = note)
+
+@app.post('/notes/<note_id>/delete')
+def delete_note(note_id):
+    """Deletes note of logged in user."""
+# TODO: change all .get to .get_or_404
+    note = Note.query.get_or_404(note_id)
+    user = User.query.get(note.owner)
+# look at decorators to not type so much
+    if "username" not in session or session["username"] != user.username:
+        flash("You must be logged in to view!")
+        return redirect("/login")
+
+    else:
+        form = CSRFProtectForm()
+
+        if form.validate_on_submit():
+            Note.query.filter_by(id = note_id).delete()
+            db.session.commit()
+
+        flash('Note deleted')
+        return redirect(f'/users/{user.username}')
