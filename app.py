@@ -40,7 +40,7 @@ def show_register_form():
         db.session.commit()
 
         flash(f"Created account for {username}")
-        return redirect("/secret")
+        return redirect("/login")
 
     return render_template('register.html', form=form)
 
@@ -67,8 +67,14 @@ def login():
     return render_template("login.html", form=form)
 
 
-@app.route('/secret')
-def show_secret():
-    """Show secret page"""
-    return render_template('secret.html')
+@app.get("/secret")
+def secret():
+    """Example hidden page for logged-in users only."""
+
+    if "username" not in session:
+        flash("You must be logged in to view!")
+        return redirect("/login")
+
+    else:
+        return render_template("secret.html")
 
