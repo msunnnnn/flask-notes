@@ -1,8 +1,7 @@
-from urllib.parse import uses_fragment
-from flask import Flask, flash, redirect, render_template
+from flask import Flask, flash, redirect, render_template, session
 
 from models import db, connect_db, User
-from forms import RegisterForm
+from forms import RegisterForm, LoginForm
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "oh-so-secret"
@@ -31,7 +30,7 @@ def show_register_form():
         first_name = form.first_name.data
         last_name = form.last_name.data
 
-        user = User(username=username,
+        user = User.register(username=username,
                   password=password,
                   email=email,
                   first_name=first_name,
@@ -41,6 +40,35 @@ def show_register_form():
         db.session.commit()
 
         flash(f"Created account for {username}")
-        return redirect("/")
+        return redirect("/secret")
 
     return render_template('register.html', form=form)
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """Produce login form or handle login."""
+
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+
+        # authenticate will return a user or False
+        user = User.authenticate(username, password)
+
+        if user:
+            session["username"] = user.username  # keep logged in
+            return redirect("/secret")
+
+        else:
+            form.username.errors = ["Bad name/password"]
+
+    return render_template("login.html", form=form)
+
+
+@app.route('/secret')
+def show_secret():
+    """Show secret page"""
+    return render_template('secret.html')
+

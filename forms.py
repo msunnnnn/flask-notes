@@ -13,3 +13,9 @@ class RegisterForm(FlaskForm):
                              validators=[InputRequired(), Length(min=2, max=30)])
     last_name = StringField('Last Name',
                             validators=[InputRequired(), Length(min=2, max=30)])
+
+class LoginForm(FlaskForm):
+    username = StringField('Username',
+                            validators=[InputRequired(), Length(min=4, max=20)])
+    password = PasswordField('Password',
+                            validators=[InputRequired(), Length(min=8, max=20)])
