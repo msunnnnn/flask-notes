@@ -1,7 +1,7 @@
 from flask import Flask, flash, redirect, render_template, session
 
 from models import db, connect_db, User
-from forms import RegisterForm, LoginForm
+from forms import RegisterForm, LoginForm, CSRFProtectForm
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "oh-so-secret"
@@ -67,14 +67,27 @@ def login():
     return render_template("login.html", form=form)
 
 
-@app.get("/secret")
-def secret():
-    """Example hidden page for logged-in users only."""
+@app.get("/users/<username>")
+def display_user_profile(username):
+    """Display user profile of logged in user."""
 
     if "username" not in session:
         flash("You must be logged in to view!")
         return redirect("/login")
 
     else:
-        return render_template("secret.html")
+        form = CSRFProtectForm()
+        user = User.query.get(username)
+        return render_template("user.html", user = user, form = form)
 
+@app.post("/logout")
+def logout():
+    """Logs user out and redirects to homepage."""
+
+    form = CSRFProtectForm()
+
+    if form.validate_on_submit():
+        # Remove "username" if present, but no errors if it wasn't
+        session.pop("username", None)
+
+    return redirect("/")
