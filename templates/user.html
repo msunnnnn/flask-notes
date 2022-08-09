@@ -22,6 +22,7 @@
     <a href="/notes/{{ note.id }}">{{ note.title }}</a>
     <a href="/notes/{{ note.id }}/update"><button>Edit Note</button></a>
     <form action="/notes/{{ note.id }}/delete" method="POST">
+      {{form.hidden_tag()}}
       <button>Delete Note</button>
     </form>
   </li>
@@ -29,6 +30,7 @@
 </ul>
 <a href="/users/{{ user.username }}/notes/add"><button>Add Note</button></a>
 <form action="/users/{{ user.username }}/delete" method="POST">
+  {{form.hidden_tag()}}
   <button>Delete User</button>
 </form>
 

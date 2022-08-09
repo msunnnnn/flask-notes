@@ -105,13 +105,17 @@ def delete_user_profile(username):
         return redirect("/login")
 
     else:
-        Note.query.filter_by(owner=username).delete()
-        user = User.query.get(username)
-        user.query.delete()
+        form = CSRFProtectForm()
 
-        db.session.commit()
+        if form.validate_on_submit():
+        # Remove "username" if present, but no errors if it wasn't
+            Note.query.filter_by(owner=username).delete()
+            user = User.query.get(username)
+            user.query.delete()
 
-        session.pop("username")
+            db.session.commit()
+
+            session.pop("username")
         return redirect('/login')
 
 @app.route("/users/<username>/notes/add", methods=["GET","POST"])
