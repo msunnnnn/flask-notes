@@ -40,13 +40,17 @@ def show_register_form():
         db.session.commit()
 
         flash(f"Created account for {username}")
-        return redirect("/login")
+        session["username"] = username
+        return redirect(f'/users/{username}')
 
     return render_template('register.html', form=form)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Produce login form or handle login."""
+
+    if "username" in session:
+        return redirect(f'/users/{session["username"]}')
 
     form = LoginForm()
 
@@ -59,7 +63,7 @@ def login():
 
         if user:
             session["username"] = user.username  # keep logged in
-            return redirect("/secret")
+            return redirect(f'/users/{username}')
 
         else:
             form.username.errors = ["Bad name/password"]
@@ -71,7 +75,7 @@ def login():
 def display_user_profile(username):
     """Display user profile of logged in user."""
 
-    if "username" not in session:
+    if "username" not in session or session["username"] != username:
         flash("You must be logged in to view!")
         return redirect("/login")
 
