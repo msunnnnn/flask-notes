@@ -1,4 +1,4 @@
-from flask import Flask, flash, redirect, render_template, session
+from flask import Flask, flash, redirect, render_template, session, abort, g
 
 from models import db, connect_db, User, Note
 from forms import NoteForm, RegisterForm, LoginForm, CSRFProtectForm
@@ -10,6 +10,22 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 connect_db(app)
 db.create_all()
+
+# def check_login_status(func):
+#     def inner():
+#         if "username" not in session:
+#             flash("You must be logged in to view!")
+#             return redirect("/login")
+#         # elif session["username"] != username:
+#         #     flash("You are not authorized!")
+#         #     return redirect(f"/users/{username}")
+#     return inner
+
+@app.before_request
+def add_csrf_form_to_all_pages():
+    """Before every route, add CSRF-only form to global object."""
+    g.csrf_form = CSRFProtectForm()
+
 
 @app.get('/')
 def redirect_home_page():
@@ -79,27 +95,30 @@ def login():
 
     return render_template("login.html", form=form)
 
-
 @app.get("/users/<username>")
 def display_user_profile(username):
     """Display user profile of logged in user."""
-    # TODO: break into 2 if statements if not correct user, redirect to user page
-    if "username" not in session or session["username"] != username:
+
+    if "username" not in session:
         flash("You must be logged in to view!")
         return redirect("/login")
 
-    else:
-        form = CSRFProtectForm()
-        user = User.query.get(username)
-        return render_template("user.html", user = user, form = form)
+    if session["username"] != username:
+        flash("You are not authorized!")
+        return abort(401)
+        # return redirect(f"/users/{username}")
+
+    form = CSRFProtectForm()
+    user = User.query.get_or_404(username)
+    return render_template("user.html", user = user, form = form)
 
 @app.post("/logout")
 def logout():
     """Logs user out and redirects to homepage."""
 
-    form = CSRFProtectForm()
+    # form = CSRFProtectForm()
 
-    if form.validate_on_submit():
+    if g.csrf_form.validate_on_submit():
         # Remove "username" if present, but no errors if it wasn't
         session.pop("username", None)
 
@@ -114,12 +133,12 @@ def delete_user_profile(username):
         return redirect("/login")
 
     else:
-        form = CSRFProtectForm()
+        # form = CSRFProtectForm()
 
-        if form.validate_on_submit():
+        if g.csrf_form.validate_on_submit():
         # Remove "username" if present, but no errors if it wasn't
             Note.query.filter_by(owner=username).delete()
-            user = User.query.get(username)
+            user = User.query.get_or_404(username)
             user.query.delete()
 
             db.session.commit()
@@ -139,7 +158,7 @@ def show_add_note_form(username):
 
     else:
         form = NoteForm()
-        user = User.query.get(username)
+        user = User.query.get_or_404(username)
 
 
         if form.validate_on_submit():
@@ -192,18 +211,18 @@ def edit_note(note_id):
 @app.post('/notes/<note_id>/delete')
 def delete_note(note_id):
     """Deletes note of logged in user."""
-# TODO: change all .get to .get_or_404
+
     note = Note.query.get_or_404(note_id)
-    user = User.query.get(note.owner)
+    user = User.query.get_or_404(note.owner)
 # look at decorators to not type so much
     if "username" not in session or session["username"] != user.username:
         flash("You must be logged in to view!")
         return redirect("/login")
 
     else:
-        form = CSRFProtectForm()
+        # form = CSRFProtectForm()
 
-        if form.validate_on_submit():
+        if g.csrf_form.validate_on_submit():
             Note.query.filter_by(id = note_id).delete()
             db.session.commit()
 
